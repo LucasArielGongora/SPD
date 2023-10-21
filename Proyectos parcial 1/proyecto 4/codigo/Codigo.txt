@@ -1,0 +1,312 @@
+// C++ code
+/*
+Diseñar un contador de 0 a 99 utilizando dos displays de 7 segmentos y tres botones para
+controlar la cuenta. Debes implementar la técnica de multiplexación para mostrar los dígitos
+en los displays. El contador debe comenzar en 0 y debe ser capaz de aumentar o disminuir
+su valor en una unidad con los botones.
+*/
+//define
+#define A 10
+#define B 11
+#define C 5
+#define D 6
+#define E 7
+#define F 9
+#define G 8
+#define PULSADOR_MAS 4
+#define PULSADOR_MENOS 3
+//#define PULSADOR_RESET 2
+#define INTERRUPTOR 2
+#define UNIDAD A4
+#define DECENA A5
+#define APAGADOS 0
+#define TMP A3
+#define MOTORPOS 12
+#define MOTORNEG 13
+#define FOTO A2
+#define LED A0
+
+//variales de precompilacion.
+int botonMasAhora = 1;
+int botonMenosAhora = 1;
+int botonResetAhora = 1;
+int pulsadorMasAnterior = 1;  
+int pulsadorMenosAnterior = 1;
+int pulsadorResetAnterior = 1;
+int contador = 0;
+int modo = 1;
+int retornoInterruptor = 1;
+ 
+//Declaracion de funciones
+int estadoBoton();
+void mostrar(int decena);
+void prendeNumero(int numero);
+void imprimirNumero(int numero);
+bool esPrimo(int num);
+int estadoInterruptor();
+float temperatura = 0;
+bool sistemaEncendido = true;
+
+void setup()
+{
+  pinMode(UNIDAD, OUTPUT);
+  pinMode(DECENA, OUTPUT); 
+  pinMode(A, OUTPUT); 
+  pinMode(B, OUTPUT);
+  pinMode(C, OUTPUT);
+  pinMode(D, OUTPUT);
+  pinMode(E, OUTPUT);
+  pinMode(F, OUTPUT);
+  pinMode(G, OUTPUT);
+  pinMode(PULSADOR_MAS, INPUT_PULLUP);
+  pinMode(PULSADOR_MENOS, INPUT_PULLUP);
+  pinMode(INTERRUPTOR, INPUT_PULLUP);
+  pinMode(MOTORPOS, OUTPUT);
+  pinMode(MOTORNEG, OUTPUT);
+  pinMode(LED, OUTPUT);
+  Serial.begin(9600); //solo lo uso para testear
+}   
+    
+void loop() {
+  int presiono = estadoBoton();
+  int interruptor = estadoInterruptor();
+  temperatura = map(analogRead(TMP), 0, 1023, -50, 450);
+
+  // Controlar el estado de los motores y el LED independientemente del contador
+  if (sistemaEncendido) {
+    if (temperatura >= 41.5) {
+      digitalWrite(MOTORPOS, 1);
+      digitalWrite(MOTORNEG, 0);
+    } else {
+      digitalWrite(MOTORNEG, 1);
+      digitalWrite(MOTORPOS, 0);
+    }
+
+    if (analogRead(FOTO) > 10) {
+      digitalWrite(LED, 1);
+    } else {
+      digitalWrite(LED, 0);
+    }
+  } else {
+    // Apagar los motores y el LED cuando el sistema está apagado
+    digitalWrite(MOTORPOS, 0);
+    digitalWrite(MOTORNEG, 0);
+    digitalWrite(LED, 0);
+  }
+
+  if (sistemaEncendido) {
+    if (presiono == PULSADOR_MAS) {
+      contador++;
+      if (contador > 99) {
+        contador = 0;
+      }
+    } else if (presiono == PULSADOR_MENOS) {
+      contador--;
+      if (contador < 0) {
+        contador = 99;
+      }
+    }
+  }
+
+  if (interruptor == 1) {
+    sistemaEncendido = true;
+    imprimirNumero(contador);
+  } else {
+    sistemaEncendido = false;
+    // Apagar los displays cuando el sistema está apagado
+    prendeNumero(APAGADOS);
+  }
+}
+        
+// **********FUNCIONES**********
+int estadoInterruptor(void)
+{
+  modo = digitalRead(INTERRUPTOR);  
+  if(modo == 1)
+  {
+    retornoInterruptor = 1;
+  }else
+  {
+    retornoInterruptor = 0;
+  }
+  return retornoInterruptor;
+}
+
+//funcion para manejar el estado de los botones.
+int estadoBoton(void)
+{
+  botonMasAhora = digitalRead(PULSADOR_MAS); 
+  botonMenosAhora = digitalRead(PULSADOR_MENOS);
+  //botonResetAhora = digitalRead(PULSADOR_RESET);  
+  
+  if(botonMasAhora)
+  {
+    pulsadorMasAnterior = 1;  	
+  }
+  if(botonMenosAhora)
+  {
+    pulsadorMenosAnterior = 1;  	
+  }
+  if(botonResetAhora)
+  {
+    pulsadorResetAnterior = 1;  	
+  }
+  
+  if(botonMasAhora == 0 && botonMasAhora != pulsadorMasAnterior)
+  {
+    pulsadorMasAnterior = 0;
+    return PULSADOR_MAS;
+  }
+  
+  if(botonMenosAhora==0 && botonMenosAhora != pulsadorMenosAnterior)
+  {
+    pulsadorMenosAnterior = 0;
+  	return PULSADOR_MENOS;
+  }
+
+  /*if(botonResetAhora==0 && botonResetAhora != pulsadorResetAnterior)
+  {
+    pulsadorResetAnterior = 0;
+    return PULSADOR_RESET;
+  }*/
+  
+  
+ return 0; //o no presione ninguna tecla, o presione una que estaba presionada 
+}
+
+//funcion para manejar los visualizadores.
+void mostrar(int numero)
+{
+  	digitalWrite(A, LOW);
+    digitalWrite(B, LOW);
+    digitalWrite(C, LOW);
+    digitalWrite(D, LOW);
+    digitalWrite(E, LOW);
+    digitalWrite(G,LOW);
+    digitalWrite(F,LOW);
+  
+  switch(numero)
+  {
+    case 0:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(E, HIGH);      
+      digitalWrite(F,HIGH);      
+    break;
+    case 1:
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+    break;
+    case 2:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(G, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(E, HIGH);
+    break;
+    case 3:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(G, HIGH);
+    break;
+    case 4:
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(G, HIGH);
+      digitalWrite(F, HIGH);
+    break;
+    case 5:
+      digitalWrite(A, HIGH);
+      digitalWrite(F, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(G, HIGH);
+      digitalWrite(D, HIGH);
+    break;
+    case 6:
+      digitalWrite(A, HIGH);
+      digitalWrite(F, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(E, HIGH);
+      digitalWrite(G,HIGH);
+    break;
+
+    case 7:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+    break;
+    case 8:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(E, HIGH);
+      digitalWrite(G,HIGH);
+      digitalWrite(F,HIGH);
+    break;
+    case 9:
+      digitalWrite(A, HIGH);
+      digitalWrite(B, HIGH);
+      digitalWrite(C, HIGH);
+      digitalWrite(D, HIGH);
+      digitalWrite(F, HIGH);
+      digitalWrite(G,HIGH);
+    break;
+  }
+ }
+
+//funcion para manejar la multiplexacion.
+void prendeNumero(int numero)
+{
+  if(numero == UNIDAD)
+  {
+    digitalWrite(UNIDAD, LOW); //enciende
+    digitalWrite(DECENA, HIGH); //no enciende
+    delay(10);      
+  }
+  else if(numero == DECENA)
+  {
+    digitalWrite(UNIDAD, HIGH);
+    digitalWrite(DECENA, LOW);
+    delay(10);    
+  }
+  else
+  {
+    digitalWrite(UNIDAD, HIGH);
+    digitalWrite(DECENA, HIGH);
+  }
+}
+
+//funcion para mostrar en los visualizadores
+void imprimirNumero(int numero)
+{
+  prendeNumero(APAGADOS);
+  mostrar(numero/10);
+  prendeNumero(DECENA);
+  prendeNumero(APAGADOS);
+  mostrar(numero - 10*(numero/10));
+  prendeNumero(UNIDAD);
+  prendeNumero(APAGADOS);
+}
+
+// Función para verificar si un número es primo
+bool esPrimo(int num)
+{
+  if (num <= 1)
+  {
+    return false;
+  }
+  for (int i = 2; i * i <= num; i++)
+  {
+    if (num % i == 0)
+    {
+      return false;
+    }
+  }
+  return true;
+}
