@@ -1,4 +1,3 @@
-
 #Primer parcial domiciliario
 
 ##Integrantes:
@@ -7,7 +6,7 @@
 
 ##Proyecto: contador, sensor de temperatura y fotoresistencia.
 
-![Vista previa](img/imagen%20de%20proyecto.png)
+![Tinkercad](./img/imagen%20de%20proyecto.png)
 
 #Descripción: 
     Este proyecto es un sistema multifuncional que integra varias características autónomas. Cada componente cumple una función específica:
